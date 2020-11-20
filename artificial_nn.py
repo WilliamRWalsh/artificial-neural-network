@@ -1,18 +1,17 @@
 import numpy as np
-import random
 
 
 class ArtificialNeuralNetwork():
-    def __init__(self):
-        self.alpha = 0.5
+    def __init__(self, alpha):
+        self.alpha = alpha
 
         # Training Data
         self.training_X = np.array(
-            ([2, 2], [4, 8], [6, 12], [8, 16]), dtype=float)
+            ([2, 2], [4, 4], [6, 6], [8, 8]), dtype=float)
         self.training_y = np.array(([20], [40], [60], [80]), dtype=float)
 
         self.training_X = self.training_X / np.amax(self.training_X, axis=0)
-        self.training_y = self.training_y / np.amax(self.training_y, axis=0)
+        self.training_y = self.training_y / 100
 
         # Network
         self.input_layer_size = 2
@@ -26,35 +25,38 @@ class ArtificialNeuralNetwork():
         self.b_1 = np.zeros(self.hidden_layer_1_size)
         self.b_2 = np.zeros(self.output_layer_size)
 
-        # Network info
-        self.costs = []
-
     def train(self, iterations):
         for _ in range(iterations):
-            self.change_wieghts_and_bias()
+            neurons_io = self.forward_pass()
+            dJW1, dJW2 = self.back_propgation(neurons_io)
+            self.change_wieghts_and_bias(dJW1, dJW2)
+            print(neurons_io['y_hat'])
 
     def forward_pass(self):
-        self.z_2 = np.dot(self.training_X, self.W_1) + self.b_1
-        self.a_2 = self.sigmoid(self.z_2)
+        z_2 = np.dot(self.training_X, self.W_1) + self.b_1
+        a_2 = self.sigmoid(z_2)
 
-        self.z_3 = np.dot(self.a_2, self.W_2) + self.b_2
-        self.a_3 = self.sigmoid(self.z_3)
+        z_3 = np.dot(a_2, self.W_2) + self.b_2
+        a_3 = self.sigmoid(z_3)
 
-        # y hat
-        return self.a_3
+        return {'z_2': z_2, 'z_3': z_3, 'a_2': a_2, 'y_hat': a_3}
 
-    def back_propgation(self):
-        self.y_hat = self.forward_pass()
-
+    def back_propgation(self, neurons_io):
         delta3 = np.multiply(
-            -(self.training_y - self.y_hat), self.sigmoid_prime(self.z_3)
+            -(self.training_y - neurons_io['y_hat']
+              ), self.sigmoid_prime(neurons_io['z_3'])
         )
-        dJdW2 = np.dot(self.a_2.T, delta3)
+        dJdW2 = np.dot(neurons_io['a_2'].T, delta3)
 
-        delta2 = np.dot(delta3, self.W_2.T) * self.sigmoid(self.z_2)
+        delta2 = np.dot(delta3, self.W_2.T) * \
+            self.sigmoid_prime(neurons_io['z_2'])
         dJdW1 = np.dot(self.training_X.T, delta2)
 
         return dJdW1, dJdW2
+
+    def change_wieghts_and_bias(self, dJW1, dJW2):
+        self.W_1 += -self.alpha * dJW1
+        self.W_2 += -self.alpha * dJW2
 
     def cost_function(self):
         """
@@ -63,12 +65,6 @@ class ArtificialNeuralNetwork():
         self.y_hat = self.forward_pass()
         x = 1/2 * (self.training_y - self.y_hat) ** 2
         return x
-
-    def change_wieghts_and_bias(self):
-        dJdW1, dJdW2 = self.back_propgation()
-
-        self.W_1 += -self.alpha * dJdW1
-        self.W_2 += -self.alpha * dJdW2
 
     @staticmethod
     def sigmoid(z):
@@ -83,20 +79,19 @@ class ArtificialNeuralNetwork():
 
     def test(self, x):
         self.training_X = x / np.amax(x, axis=0)
-        print(self.forward_pass())
+        print(self.forward_pass()['y_hat'])
 
 
-ann = ArtificialNeuralNetwork()
-ann.train(1000)
-print(ann.y_hat)
-x = np.array(
-    ([1, 1], [2, 8], [6, 12], [10, 20]), dtype=float)
-ann.test(x)
+ann = ArtificialNeuralNetwork(alpha=1)
+ann.train(10000)
+
+# x = np.array(
+#     ([1, 1], [2, 8], [6, 12], [10, 20]), dtype=float)
+# ann.test(x)
 
 """
 Next steps:
     - How to normalize input data?
-    - Clean up this mess
     - Hook it up to the MNIST data
     - Have the training stop after cost is below threshold?
 """
