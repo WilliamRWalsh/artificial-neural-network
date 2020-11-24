@@ -1,21 +1,32 @@
 import numpy as np
+from keras.datasets import mnist
 
 
 class ArtificialNeuralNetwork():
     def __init__(self, alpha):
+
+        (self.training_X, self.training_y), (self.test_X,
+                                             self.test_y) = mnist.load_data()
+        self.training_X = self.training_X[:100]
+        self.training_y = self.training_y[:100]
+        self.training_y = self.training_y.reshape(100, 1)
+        x = [x.flatten() for x in self.training_X]
+
+        self.training_X = np.asarray(x)
+
         self.alpha = alpha
 
         # Training Data
-        self.training_X = np.array(
-            ([2, 2], [4, 4], [6, 6], [8, 8]), dtype=float)
-        self.training_y = np.array(([20], [40], [60], [80]), dtype=float)
+        # self.training_X = np.array(
+        #     ([2, 2], [4, 4], [6, 6], [8, 8]), dtype=float)
+        # self.training_y = np.array(([20], [40], [60], [80]), dtype=float)
 
-        self.training_X = self.training_X / np.amax(self.training_X, axis=0)
-        self.training_y = self.training_y / 100
+        self.training_X = self.training_X / 255
+        self.training_y = self.training_y / 9
 
         # Network
-        self.input_layer_size = 2
-        self.hidden_layer_1_size = 3
+        self.input_layer_size = 28 * 28
+        self.hidden_layer_1_size = 64
         self.output_layer_size = 1
 
         self.W_1 = np.random.randn(
@@ -30,7 +41,9 @@ class ArtificialNeuralNetwork():
             neurons_io = self.forward_pass()
             dJW1, dJW2 = self.back_propgation(neurons_io)
             self.change_wieghts_and_bias(dJW1, dJW2)
-            print(neurons_io['y_hat'])
+        print("y = " + str(self.training_y[:10]))
+        print("y_hat = " + str(neurons_io['y_hat'][:10]))
+        print("Cost = " + str(sum(self.cost_function())))
 
     def forward_pass(self):
         z_2 = np.dot(self.training_X, self.W_1) + self.b_1
@@ -62,8 +75,8 @@ class ArtificialNeuralNetwork():
         """
         J = Σ 1/2(y - ŷ)^2
         """
-        self.y_hat = self.forward_pass()
-        x = 1/2 * (self.training_y - self.y_hat) ** 2
+        io = self.forward_pass()
+        x = 1/2 * (self.training_y - io['y_hat']) ** 2
         return x
 
     @staticmethod
@@ -79,7 +92,6 @@ class ArtificialNeuralNetwork():
 
     def test(self, x):
         self.training_X = x / np.amax(x, axis=0)
-        print(self.forward_pass()['y_hat'])
 
 
 ann = ArtificialNeuralNetwork(alpha=1)
