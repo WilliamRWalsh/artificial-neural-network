@@ -52,7 +52,7 @@ class ArtificialNeuralNetwork():
         '''
         for _ in range(iterations):
             neurons_io = self.forward_pass()
-            dJW1, dJW2, dJW3 = self.back_propgation(neurons_io)
+            dJW1, dJW2, dJW3 = self.back_propagation(neurons_io)
             self.change_weights_and_bias(dJW1, dJW2, dJW3)
 
         # Logs
@@ -84,7 +84,7 @@ class ArtificialNeuralNetwork():
             'y_hat': a_4
         }
 
-    def back_propgation(self, neurons_io):
+    def back_propagation(self, neurons_io):
         '''
         dJ/dW2 = aT d3
         dJ/dW1 = XT d2
@@ -149,8 +149,7 @@ ann.train(10000)
 """
 Next steps:
     - Have the training stop after cost is below threshold?
+    - Use test data too
     - Make 10 output nodes
-    - Make extra hidden layers
     - Add bais
-    
 """
