@@ -21,20 +21,24 @@ class ArtificialNeuralNetwork():
 
         # Normalize inputs/outputs
         self.training_X = self.training_X / 255
-        self.training_y = self.training_y / 9
+        self.training_y = self.training_y / 10
 
         # Network
         self.input_layer_size = 28 * 28
         self.hidden_layer_1_size = 64
+        self.hidden_layer_2_size = 64
         self.output_layer_size = 1
 
         # Weights & Biases
         self.W_1 = np.random.randn(
             self.input_layer_size, self.hidden_layer_1_size)
         self.W_2 = np.random\
-            .randn(self.hidden_layer_1_size, self.output_layer_size)
+            .randn(self.hidden_layer_1_size, self.hidden_layer_2_size)
+        self.W_3 = np.random\
+            .randn(self.hidden_layer_2_size, self.output_layer_size)
         self.b_1 = np.zeros(self.hidden_layer_1_size)
-        self.b_2 = np.zeros(self.output_layer_size)
+        self.b_2 = np.zeros(self.hidden_layer_2_size)
+        self.b_3 = np.zeros(self.output_layer_size)
 
     def train(self, iterations):
         '''
@@ -48,8 +52,8 @@ class ArtificialNeuralNetwork():
         '''
         for _ in range(iterations):
             neurons_io = self.forward_pass()
-            dJW1, dJW2 = self.back_propgation(neurons_io)
-            self.change_weights_and_bias(dJW1, dJW2)
+            dJW1, dJW2, dJW3 = self.back_propgation(neurons_io)
+            self.change_weights_and_bias(dJW1, dJW2, dJW3)
 
         # Logs
         print("y = " + str(self.training_y[:10]))
@@ -68,32 +72,47 @@ class ArtificialNeuralNetwork():
         z_3 = np.dot(a_2, self.W_2) + self.b_2
         a_3 = self.sigmoid(z_3)
 
-        return {'z_2': z_2, 'z_3': z_3, 'a_2': a_2, 'y_hat': a_3}
+        z_4 = np.dot(a_3, self.W_3) + self.b_3
+        a_4 = self.sigmoid(z_4)
+
+        return {
+            'z_2': z_2,
+            'z_3': z_3,
+            'z_4': z_4,
+            'a_2': a_2,
+            'a_3': a_3,
+            'y_hat': a_4
+        }
 
     def back_propgation(self, neurons_io):
         '''
         dJ/dW2 = aT d3
         dJ/dW1 = XT d2
         '''
-        delta3 = np.multiply(
+        delta4 = np.multiply(
             -(self.training_y - neurons_io['y_hat']
-              ), self.sigmoid_prime(neurons_io['z_3'])
+              ), self.sigmoid_prime(neurons_io['z_4'])
         )
+        dJdW3 = np.dot(neurons_io['a_3'].T, delta4)
+
+        delta3 = np.dot(delta4, self.W_3.T) * \
+            self.sigmoid_prime(neurons_io['z_3'])
         dJdW2 = np.dot(neurons_io['a_2'].T, delta3)
 
         delta2 = np.dot(delta3, self.W_2.T) * \
             self.sigmoid_prime(neurons_io['z_2'])
         dJdW1 = np.dot(self.training_X.T, delta2)
 
-        return dJdW1, dJdW2
+        return dJdW1, dJdW2, dJdW3
 
-    def change_weights_and_bias(self, dJW1, dJW2):
+    def change_weights_and_bias(self, dJW1, dJW2, dJW3):
         '''
         Update weights and biases
         '''
         # TODO: Add baises
         self.W_1 += -self.alpha * dJW1
         self.W_2 += -self.alpha * dJW2
+        self.W_3 += -self.alpha * dJW3
 
     def cost_function(self):
         '''
